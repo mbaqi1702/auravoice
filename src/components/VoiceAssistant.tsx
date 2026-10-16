@@ -61,6 +61,25 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Keyboard accessibility: Esc to interrupt, / to focus composer, Space to talk
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName.toLowerCase();
+      const isInputFocused = activeTag === 'input' || activeTag === 'textarea';
+
+      if (e.key === 'Escape') {
+        handleInterrupt();
+      } else if (e.key === '/' && !isInputFocused) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [status]);
 
   // Auto-scroll chat to bottom
   useEffect(() => {
@@ -588,6 +607,34 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
           )}
         </div>
 
+        {/* Quick Suggestion Chips */}
+        <div className="px-4 py-2 bg-zinc-950/40 border-t border-zinc-800/60 flex items-center gap-1.5 overflow-x-auto text-xs">
+          <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider shrink-0 mr-1">
+            Prompt:
+          </span>
+          <button
+            type="button"
+            onClick={() => handleUserSend('Calculate 15% of 240')}
+            className="px-2.5 py-1 rounded-lg bg-zinc-800/70 hover:bg-zinc-700/80 text-zinc-300 hover:text-cyan-300 border border-zinc-700/40 transition shrink-0 cursor-pointer"
+          >
+            Calculate 15% of 240
+          </button>
+          <button
+            type="button"
+            onClick={() => handleUserSend('Summarize the key insights of the attached document.')}
+            className="px-2.5 py-1 rounded-lg bg-zinc-800/70 hover:bg-zinc-700/80 text-zinc-300 hover:text-cyan-300 border border-zinc-700/40 transition shrink-0 cursor-pointer"
+          >
+            Summarize attached document
+          </button>
+          <button
+            type="button"
+            onClick={() => handleUserSend('Explain the difference between superposition and entanglement in quantum mechanics.')}
+            className="px-2.5 py-1 rounded-lg bg-zinc-800/70 hover:bg-zinc-700/80 text-zinc-300 hover:text-cyan-300 border border-zinc-700/40 transition shrink-0 cursor-pointer"
+          >
+            Quantum mechanics summary
+          </button>
+        </div>
+
         {/* Input Bar */}
         <form
           onSubmit={(e) => {
@@ -597,15 +644,17 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
           className="p-3 border-t border-zinc-800/80 bg-zinc-950/60 flex items-center gap-2"
         >
           <input
+            ref={inputRef}
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="Type your message or click 'Speak to Aura'..."
+            placeholder="Type your message or click 'Speak to Aura' (Press '/' to focus)..."
             className="flex-1 bg-zinc-900/90 border border-zinc-700/60 rounded-xl px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
           />
           <button
             type="submit"
             disabled={!inputQuery.trim() || status === 'thinking'}
+            aria-label="Send message"
             className="p-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 disabled:hover:bg-cyan-600 text-white transition cursor-pointer"
           >
             <Send className="w-4 h-4" />

@@ -1,0 +1,36 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, "improve/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  security-and-audit:
+    name: Security & Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run Safe Calculator & Security Unit Tests
+        run: |
+          python3 -c "from backend.app.agent.tools.calculator import evaluate_expression, SecurityError; assert evaluate_expression('2 + 2') == 4.0"
+          python3 -c "from backend.app.core.security import get_safe_document_path; from pathlib import Path; get_safe_document_path('test.pdf', Path('/tmp'))"

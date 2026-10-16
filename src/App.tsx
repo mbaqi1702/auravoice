@@ -74,6 +74,10 @@ export default function App() {
     });
   };
 
+  const handleDocumentDeleted = (docId: string) => {
+    setDocuments((prev) => prev.filter((d) => d.id !== docId));
+  };
+
   const handleToggleMute = () => {
     if (!isMuted) {
       audioEngine.stopPlayback();
@@ -202,6 +206,7 @@ export default function App() {
             audioEngine={audioEngine}
             documents={documents}
             onDocumentAdded={handleDocumentAdded}
+            onDocumentDeleted={handleDocumentDeleted}
           />
         )}
 

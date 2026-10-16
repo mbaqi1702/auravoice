@@ -14,6 +14,7 @@ import {
   Layers,
   Flame,
   Volume2,
+  Trash2,
 } from 'lucide-react';
 import { IngestedDocument, AudioCreation, VoicePersona } from '../types';
 import { MarkItDownOptimizer, SAMPLE_DOCUMENTS } from '../lib/markitdown';
@@ -24,6 +25,7 @@ interface DocumentStudioProps {
   audioEngine: AudioEngine;
   documents: IngestedDocument[];
   onDocumentAdded: (doc: IngestedDocument) => void;
+  onDocumentDeleted?: (id: string) => void;
 }
 
 export const DocumentStudio: React.FC<DocumentStudioProps> = ({
@@ -31,6 +33,7 @@ export const DocumentStudio: React.FC<DocumentStudioProps> = ({
   audioEngine,
   documents,
   onDocumentAdded,
+  onDocumentDeleted,
 }) => {
   const [selectedDocId, setSelectedDocId] = useState<string>(
     documents[0]?.id || ''
@@ -39,6 +42,7 @@ export const DocumentStudio: React.FC<DocumentStudioProps> = ({
   const [podcastStyle, setPodcastStyle] = useState<'engaging' | 'analytical' | 'humorous'>('engaging');
   const [narratorVoice, setNarratorVoice] = useState<VoicePersona>('Zephyr');
   const [maxAudiobookWords, setMaxAudiobookWords] = useState<number>(200);
+  const [sectionHeading, setSectionHeading] = useState<string>('');
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState<string>('');
@@ -46,6 +50,19 @@ export const DocumentStudio: React.FC<DocumentStudioProps> = ({
   const [creationsHistory, setCreationsHistory] = useState<AudioCreation[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const handleDeleteDocument = async (docId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await fetch(`/api/documents/${sessionId}/${docId}`, { method: 'DELETE' });
+      if (onDocumentDeleted) {
+        onDocumentDeleted(docId);
+      }
+      setStatusMessage('Document deleted from active session context.');
+    } catch (err: any) {
+      setStatusMessage('Failed to delete document: ' + err.message);
+    }
+  };
 
   const currentDoc = documents.find((d) => d.id === selectedDocId) || documents[0];
 
@@ -190,6 +207,7 @@ export const DocumentStudio: React.FC<DocumentStudioProps> = ({
           documentId: currentDoc.id,
           narratorVoice,
           maxWords: maxAudiobookWords,
+          sectionHeading: sectionHeading.trim() || undefined,
         }),
       });
 
@@ -341,7 +359,16 @@ export const DocumentStudio: React.FC<DocumentStudioProps> = ({
                         </div>
                       </div>
 
-                      {isSelected && <CheckCircle className="w-4 h-4 text-cyan-400 shrink-0" />}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {isSelected && <CheckCircle className="w-4 h-4 text-cyan-400" />}
+                        <button
+                          onClick={(e) => handleDeleteDocument(doc.id, e)}
+                          title="Delete document from session"
+                          className="p-1 rounded-md text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   );
                 })
@@ -494,6 +521,22 @@ export const DocumentStudio: React.FC<DocumentStudioProps> = ({
                       <option value={400}>400 words (~2.5 mins)</option>
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-xs text-zinc-400 font-medium block mb-1">
+                    Section Filter / Chapter (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={sectionHeading}
+                    onChange={(e) => setSectionHeading(e.target.value)}
+                    placeholder="e.g. Executive Summary, Chapter 1, Latency Budget"
+                    className="w-full bg-zinc-800/80 border border-zinc-700/60 rounded-xl px-3 py-2 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                  />
+                  <span className="text-[10px] text-zinc-500 mt-0.5 block">
+                    Slices text starting from this heading up to the next heading.
+                  </span>
                 </div>
 
                 <button
