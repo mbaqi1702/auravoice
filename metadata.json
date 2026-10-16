@@ -1,0 +1,6 @@
+{
+  "name": "AuraVoice - Real-Time AI Voice Assistant & Audio Document Studio",
+  "description": "High-performance voice assistant with low-latency STT/TTS, persistent context memory, MarkItDown token optimization, and dual-mode document-to-podcast and audiobook audio studio.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
